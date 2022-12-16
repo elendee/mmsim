@@ -9,6 +9,7 @@ const os = require('os')
 
 // LOCAL PACKAGES
 const log = require('./server/log.js')
+const lib = require('./server/lib.js')
 const DB = require('./server/persistent/db.js')
 const env = require('./server/.env.js')
 // const lib = require('./utilities/lib.js')
@@ -20,13 +21,14 @@ const redis = require('redis')
 const redisClient = redis.createClient({ legacyMode: true })
 const redisStore = require('connect-redis')(session)
 const FormData = require('express-form-data')
-// const file_handler = require('./utilities/file_handler.js')
+
 // const User = require('./persistent/User.js')
 // const auth = require('./auth.js')
 // const OPS = require('./OPS.js')
 // const ADMIN = require('./ADMIN.js')
 const WSS = require('./server/WSS.js');
-// const GAME = require('./GAME.js')
+const gatekeep = require('./server/gatekeep.js')
+const GAME = require('./server/GAME.js')
 // const cors =require('cors');
 // const GLOBAL_PUBLIC = require('./GLOBAL_PUBLIC.js');
 const render = require('./client/mmo_html.js')
@@ -56,7 +58,7 @@ const server = http.createServer( exp )
 const res = await redisClient.connect()
 
 await new Promise(( resolve, reject ) => {
-	redisClient.select( rmap.canopy, ( err, res ) => {
+	redisClient.select( rmap[ env.REDIS.MAP_NAME ], ( err, res ) => {
 		if( err ){
 			reject( err )
 			return
@@ -119,25 +121,28 @@ exp.use( FormData.format() )
 
 // hypothesis - this works locally but nginx handles on server
 
+// if( env.LOCAL ){
+// 	exp.use('/css', express.static( './client/css' )) // __dirname + 
+// 	exp.use('/js', express.static( './client/js' )) // __dirname + 
+
 if( env.LOCAL ){
 
 	// exp.use('/world', express.static( env.APP_ROOT + '/world' )) 
-
-	exp.use('/js', express.static( env.APP_ROOT + '/client/js' )) 
-	exp.use('/inc', express.static( env.APP_ROOT + '/client/inc' )) 
-	exp.use('/css', express.static( env.APP_ROOT + '/client/css' )) 
-	exp.use('/resource', express.static( env.APP_ROOT + '/resource' ))
-	exp.use('/three-patch', express.static( env.APP_ROOT + '/three-patch' ))
-	exp.use('/fs', express.static( env.APP_ROOT + '/fs' )) // __dirname +	
-	exp.use('/node_modules', express.static( env.APP_ROOT + '/node_modules' )) // __dirname +	
+	exp.use('/js', express.static( './client/js' )) 
+	exp.use('/inc', express.static( './client/inc' )) 
+	exp.use('/css', express.static( './client/css' )) 
+	exp.use('/resource', express.static( './resource' ))
+	exp.use('/three-patch', express.static( './three-patch' ))
+	exp.use('/fs', express.static( './fs' )) // __dirname +	
+	exp.use('/node_modules', express.static( './node_modules' )) // __dirname +	
 
 }
  
 // handle low-level path-parsing errors that would otherwise expose user-facing errors
-exp.use(( req, res, next ) => {
-	if( req.path.match('%%')) return res.send( render('error', req, 'invalid path'));
-	next()
-})
+// exp.use(( req, res, next ) => {
+// 	if( req.path.match('%%')) return res.send( render('error', req, 'invalid path'));
+// 	next()
+// })
 
 exp.use( bodyParser.json({ 
 	type: 'application/json' ,
@@ -151,7 +156,7 @@ exp.use( bodyParser.urlencoded({
 
 // exp.use( lru_session )
 
-// exp.use( gatekeep )
+exp.use( gatekeep )
 
 // get / page routing
 exp.get('/', (request, response) => {
@@ -165,6 +170,7 @@ exp.get('/favicon.ico', ( request, response ) => {
 exp.get('/login', (request, response) => {
 	response.send( render( 'login', request ) )
 })
+
 
 
 
@@ -192,18 +198,22 @@ DB.initPool(( err, pool ) => {
 ---------------
 ---- ${ env.SITE_TITLE }
 ---------------
-:: url: ${ env.URL }
+:: url: ${ env.APP_ROOT }
 :: port: ${ env.PORT }
 :: time: ${ new Date().toString().split(' (')[0] }
-:: REDIS: ${ env.REDIS.NAME }: ${ rmap.gamescry }
+:: REDIS: ${ env.REDIS.NAME }: ${ rmap[ env.REDIS.MAP_NAME ] }
 :: OS: ${ host }
 \x1b[0m`)
 	})
 
 	server.on('upgrade', ( request, socket, head ) => {
+		// log('flag',' --UPGRADE--')
 		redis_session( request, {}, () => {
+		// 	log('flag',' --SESSION--')
+		// log('flag', 'req ha s user?', request.session?.USER )
+
 			WSS.handleUpgrade( request, socket, head, ( ws ) => {
-				WSS.emit('connection', ws, request ) // ws
+				WSS.emit('connection', ws, request )
 			})
 		})
 	})
@@ -223,9 +233,12 @@ DB.initPool(( err, pool ) => {
 				log('flag', ' err init user', err )
 			})
 		}else{
-			GAME.init()
+			GAME.initialize()
 			.then( res => {
 				GAME.init_user( socket )
+				.catch( err => {
+					log('flag', 'err user join', err )
+				})
 			})
 		}
 	})

@@ -1,10 +1,11 @@
 /*asdf*/
 
-*{
+div, span, img, p, pre{
     box-sizing: border-box;
 }
 
 img{
     max-width: 100%;
-/*     width: 100%; */
 }
+
+

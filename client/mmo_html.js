@@ -17,10 +17,8 @@ const site_favicon = '/resource/media/favicon.ico'
 const popups = `
 <div id='dev'></div>
 <div id='alert-contain'>
-</div>
-<div id='return' class='hidden button'>
-	^
-</div>`
+</div
+>`
 
 
 const global_data = `<div id="global-data">${ JSON.stringify( PUBLIC ) }</div>`
@@ -59,39 +57,13 @@ const styles = {
 	base: `<link rel='stylesheet' href='/css/base.css?v=1'>`,
 	auth: `<link rel='stylesheet' href='/css/auth.css?v=1'>`,
 	account: `<link rel='stylesheet' href='/css/account.css?v=1'>`,
+	world: `<link rel='stylesheet' href='/css/world.css?v=1'>`,
 	admin: `<link rel='stylesheet' href='/css/admin.css?v=1'>`,
 	user: `<link rel='stylesheet' href='/css/user.css?v=1'>`,
-	admin: `<link rel='stylesheet' href='/css/admin.css?v=1'>`,
 	modal: `<link rel='stylesheet' href='/css/modal.css?v=1'>`,
 }
 
 
-
-
-const mud_selector = ``
-// <div id='mud-selector'>
-// 	<img title='MUD toggle' class='' src='/resource/media/MUD-door.png'>
-// </div>`
-
-
-const parseMUD = request => {
-	const is_mud = request?.session?.IS_MUD
-	const insert = is_mud ? `<div id='isMUD'></div>` : ''
-	// log('flag', 'parseMUD: ', is_mud )
-	return insert
-}
-
-const active_link = ( search, request, type ) => {
-	// log('flag', 'REQ ULR?', request.url, type )
-
-	if( type === 'index' ) return 'active' // special case, mismatched url
-
-	const regex = new RegExp( search, 'i')
-	if( request.url.match( regex )){
-		return `active`
-	}
-	return ''
-}
 
 const standard_links = ( type, request ) => {
 	return ''
@@ -114,7 +86,7 @@ const build_header = ( type, request, header ) => {
 		</a>
 
 		<h2 class='site-title'>
-			<a href='/'>${ 0 ? '' : env.SITE_TITLE }</a>
+			<a href='/'>${ env.SITE_TITLE }</a>
 		</h2>
 
 		<div id='mobile-toggle'>
@@ -159,6 +131,7 @@ const build_meta = ( type, data, title ) => {
 
 
 
+
 const render = ( type, request, response, data ) => {
 
 	try{
@@ -172,7 +145,7 @@ const render = ( type, request, response, data ) => {
 
 		case 'index':
 
-			css_includes += styles.index + styles.modal // styles.auth + 
+			css_includes += styles.index + styles.modal + styles.world
 			script_includes += scripts.index //+ scripts.querystring
 
 			return `
@@ -182,9 +155,10 @@ const render = ( type, request, response, data ) => {
 					${ css_includes }
 					${ script_includes }
 				</head>
-
 				<body class='${ type }'>
 					${ build_header( type, request, TITLE ) }
+					${ popups }
+					${ global_data }
 				</body>
 			</html>
 			`

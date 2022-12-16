@@ -1,0 +1,46 @@
+/*asdf*/
+
+.hud-section{
+    position: relative;
+    border: 1px solid;
+    padding: 10px;
+    display: inline-block;
+    margin: 10px;
+    vertical-align: top;
+    max-height: 500px;
+    height: 100%;
+    overflow-y: auto;
+    padding-top: 30px;
+}
+
+.section-header{
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: rgba(0, 0, 0, .7);
+    padding: 5px;
+    color: lightblue;
+}
+
+.event_type.loot_treasure{
+    color: gold;
+}
+.event_type.mob_kill{
+    color: orange;
+}
+.event_type.loot_treasure{
+    color: orange;
+}
+.event_type.player_kill{
+    color: red;
+}
+.event_type.loot_epic{
+    color: blue;
+}
+.event_type.join_guild{
+    color: green
+}
+
+.player-name{
+    color: grey;
+}
